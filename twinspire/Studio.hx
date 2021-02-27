@@ -13,6 +13,7 @@ package twinspire;
 
 import twinspire.events.Event;
 import twinspire.events.EventType;
+import twinspire.studio.*;
 
 import kha.graphics2.Graphics;
 import kha.input.KeyCode;
@@ -45,6 +46,22 @@ class Studio
     var currentPos:FV2;
     var currentSize:FV2;
 
+    var view:StateView;
+
+
+
+    //
+    // 1.1 UI Variables
+    //
+
+    var scrollingPositions:Array<FV2>;
+    inline var scrollingMax:Int = 100;
+    var scrollIndex:Int;
+
+    var currentFrameSize:FV2;
+    var framesExpanded:Array<Bool>;
+    var frameIndex:Int;
+
     //
     // 2. Global Functions
     //
@@ -59,6 +76,10 @@ class Studio
 
         currentPos = new FV2(5, 5);
         currentSize = new FV2(0, 0);
+        scrollingPositions = [ for (i in 0...scrollingMax) new FV2(0, 0) ];
+        scrollIndex = 0;
+
+        framesExpanded = [];
     }
 
     function handleEvent(e:Event)
@@ -97,6 +118,8 @@ class Studio
         {
             currentPos = new FV2(5, 5);
             currentSize = new FV2(0, 0);
+            scrollIndex = 0;
+            frameIndex = 0;
 
             g2.color = Color.Black;
             g2.font = font;
@@ -104,6 +127,20 @@ class Studio
             g2.drawString("Twinspire Studio (0.0.1-alpha)", 5, System.windowHeight() - g2.font.height(g2.fontSize) - 5);
 
             renderMainMenu();
+
+            switch (view)
+            {
+                case STATE_SCENES:
+                {
+                    flowDown(20);
+                    if (beginFrame("Scenes", new FV2(System.windowWidth() * .13, System.windowHeight() * .45)))
+                    {
+
+                    }
+                }
+                default:
+
+            }
         }
 
         mouseReleased = false;
@@ -123,14 +160,14 @@ class Studio
     {
         if (menuButton("Scenes"))
         {
-
+            view = STATE_SCENES;
         }
 
         flowRight();
 
         if (menuButton("Settings"))
         {
-
+            view = STATE_SETTINGS;
         }
     }
 
@@ -172,6 +209,46 @@ class Studio
     function flowRight(value:Float = 0.0)
     {
         currentPos.x += currentSize.x + value;
+    }
+
+    function flowDown(value:Float = 0.0)
+    {
+        if (currentPos.x > 0)
+        {
+            currentPos.x = value;
+        }
+
+        currentPos.y += currentSize.y + value;
+    }
+
+    function beginFrame(title:String, size:FV2)
+    {
+        currentFrameSize = new FV2(size.x, size.y);
+
+        g2.fontSize = 22;
+        var innerPadding = 4;
+        var titleBarHeight = g2.font.height(g2.fontSize) + (innerPadding * 2);
+
+        g2.color = Color.fromFloats(0, .5, .8);
+        g2.fillRect(currentPos.x, currentPos.y, currentFrameSize.x, titleBarHeight);
+
+        if (frameIndex + 1 < framesExpanded.length)
+        {
+            framesExpanded.push(true);
+        }
+
+        var active = isMouseOver(cast currentPos.x, cast currentPos.y, cast size.x, cast titleBarHeight);
+        if (active && mouseReleased)
+            framesExpanded[frameIndex] = !framesExpanded[frameIndex];
+
+        if (framesExpanded[frameIndex])
+            g2.drawRect(currentPos.x, currentPos.y, currentFrameSize.x, currentFrameSize.y, 2);
+        
+        g2.color = Color.White;
+        g2.drawString(title, currentPos.x + innerPadding, currentPos.y + innerPadding);
+
+        var temp = ++frameIndex;
+        return framesExpanded[temp];
     }
 
     //
