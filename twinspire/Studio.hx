@@ -6,7 +6,9 @@ Table of Contents
   2. Global Functions
   3. Rendering
     3.1 Main Menu
-
+  4. UI
+    4.1 Layout
+  5. Utils
 */
 
 package twinspire;
@@ -59,8 +61,12 @@ class Studio
     var scrollIndex:Int;
 
     var currentFrameSize:FV2;
+    var currentFramePos:FV2;
     var framesExpanded:Array<Bool>;
     var frameIndex:Int;
+
+    var currentRows:Array<Float>;
+    var currentRowIndex:Int;
 
     //
     // 2. Global Functions
@@ -133,9 +139,20 @@ class Studio
                 case STATE_SCENES:
                 {
                     flowDown(20);
+                    currentPos.x = 20;
                     if (beginFrame("Scenes", new FV2(System.windowWidth() * .13, System.windowHeight() * .45)))
                     {
+                        flowDown();
+                        row([.5, .5]);
+                        if (button("Add Scene"))
+                        {
 
+                        }
+
+                        if (button("Remove Scene"))
+                        {
+
+                        }
                     }
                 }
                 default:
@@ -206,24 +223,10 @@ class Studio
         return (active && mouseReleased);
     }
 
-    function flowRight(value:Float = 0.0)
-    {
-        currentPos.x += currentSize.x + value;
-    }
-
-    function flowDown(value:Float = 0.0)
-    {
-        if (currentPos.x > 0)
-        {
-            currentPos.x = value;
-        }
-
-        currentPos.y += currentSize.y + value;
-    }
-
     function beginFrame(title:String, size:FV2)
     {
         currentFrameSize = new FV2(size.x, size.y);
+        currentFramePos = new FV2(currentPos.x, currentPos.y);
 
         g2.fontSize = 22;
         var innerPadding = 4;
@@ -247,8 +250,115 @@ class Studio
         g2.color = Color.White;
         g2.drawString(title, currentPos.x + innerPadding, currentPos.y + innerPadding);
 
-        var temp = ++frameIndex;
+        currentSize = new FV2(size.x, titleBarHeight);
+
+        var temp = frameIndex;
+        frameIndex++;
         return framesExpanded[temp];
+    }
+
+    function button(text:String)
+    {
+        var width = resolveWidth();
+        var pos = resolvePosition(width);
+        if (currentRowIndex + 1 > currentRows.length)
+        {
+            currentRows = null;
+            currentRowIndex = 0;
+        }
+        else
+            currentRowIndex++;
+
+        var innerPadding = 8;
+
+        g2.fontSize = 20;
+        var height = g2.font.height(g2.fontSize) + (innerPadding * 2);
+        if (width == 0.0)
+        {
+            width = g2.font.width(g2.fontSize, text) + (innerPadding * 2);
+        }
+
+        var active = isMouseOver(cast pos.x, cast pos.y, cast width, cast height);
+        var backColor = Color.fromFloats(0, .5, .8);
+        if (active && mouseDown)
+        {
+            backColor = Color.fromFloats(0, .25, .65);
+        }
+        else if (active)
+        {
+            backColor = Color.fromFloats(0, .75, 1);
+        }
+
+        g2.color = backColor;
+        g2.fillRect(pos.x, pos.y, width, height);
+        g2.color = Color.White;
+        var textX = (width - g2.font.width(g2.fontSize, text)) / 2;
+        g2.drawString(text, pos.x + textX, pos.y + innerPadding);
+
+        currentSize = new FV2(width, height);
+
+        return (active && mouseReleased);
+    }
+
+    //
+    // 4.1 Layout
+    //
+
+    function row(values:Array<Float>)
+    {
+        if (currentFrameSize != null)
+        {
+            currentRows = values;
+            currentRowIndex = 0;
+        }
+    }
+
+    function flowRight(value:Float = 0.0)
+    {
+        currentPos.x += currentSize.x + value;
+    }
+
+    function flowDown(value:Float = 0.0)
+    {
+        currentPos.y += currentSize.y + value;
+    }
+
+    function resolvePosition(width:Float = 0.0)
+    {   
+        if (currentRows != null)
+        {
+            if (currentRowIndex + 1 < currentRows.length)
+            {
+                var temp = new FV2(currentPos.x, currentPos.y);
+                currentPos.x += currentRows[currentRowIndex] * currentFrameSize.x;
+                return temp;
+            }
+            else
+            {
+                var temp = new FV2(currentPos.x, currentPos.y);
+                currentPos.x = 0;
+                return temp;
+            }
+        }
+        else
+        {
+            currentPos.x += width;
+            return currentPos;
+        }
+    }
+
+    function resolveWidth()
+    {
+        var result = 0.0;
+        if (currentRows != null)
+        {
+            if (currentRowIndex < currentRows.length)
+            {
+                result = currentRows[currentRowIndex] * currentFrameSize.x;
+            }
+        }
+
+        return result;
     }
 
     //
